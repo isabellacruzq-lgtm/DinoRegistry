@@ -1,5 +1,6 @@
 #include "dinosaur_console.h"
 #include "dinosaur_management.h"
+#include "file_persistence.h"
 
 #include <iostream>
 #include <limits>
@@ -232,6 +233,7 @@ void runDinosaurMenu(DinosaurCollection& collection) {
             << "3. Eliminar dinosaurio\n"
             << "4. Listar dinosaurios\n"
             << "5. Mostrar perfil por código\n"
+            << "6. Guardar coleccion en archivo\n"
             << "0. Salir\n"
             << "Selecciona una opción: ";
 
@@ -274,6 +276,12 @@ void runDinosaurMenu(DinosaurCollection& collection) {
 
             case 5:
                 showDinosaurFromConsole(collection);
+                break;
+
+            case 6:
+                if (saveDinosaursToFile(collection, "dinosaurs.txt")) {
+                    generateReport(collection, "report.txt");
+                }
                 break;
 
             case 0:

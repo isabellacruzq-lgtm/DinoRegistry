@@ -1,0 +1,3 @@
+DIN-001|Tyrannosaurus Rex|Cretacico|Carnivoro|12|8|68|Montana, USA
+DIN-002|Triceratops|Cretacico|Herbivoro|9|6|66|Dakota del Sur, USA
+DIN-003|Velociraptor|Cretacico|Carnivoro|2|0.015|75|Mongolia
