@@ -1,24 +1,38 @@
+
 #include "dinosaur_collection.h"
 #include "dinosaur_console.h"
+#include "file_persistence.h"
 
 #include <iostream>
 
-/*
- * Inicializa la colección, ejecuta el menú y libera la memoria al salir.
- * Parámetros: ninguno.
- * Retorno: 0 si el programa termina correctamente.
- * Complejidad: depende de las operaciones seleccionadas en el menú.
- */
 int main() {
     DinosaurCollection collection;
-
     initializeCollection(collection);
 
+    // Carga los datos antes de mostrar el menu.
+    loadDinosaursFromFile(collection, "dinosaurs.txt");
+
+    // Muestra el mapa si el archivo esta disponible.
+    readExcavationMap("excavation.txt");
+
+    // El menu permite gestionar la coleccion y guardar manualmente.
     runDinosaurMenu(collection);
+
+    // Guarda y genera el reporte al salir.
+    const bool saved =
+        saveDinosaursToFile(collection, "dinosaurs.txt");
+
+    const bool reported =
+        generateReport(collection, "report.txt");
+
+    if (!saved || !reported) {
+        std::cerr
+            << "Aviso: una o mas operaciones de archivo fallaron. "
+            << "Revisa los mensajes anteriores.\n";
+    }
 
     freeCollection(collection);
 
     std::cout << "Memoria liberada. Hasta luego.\n";
-
     return 0;
 }

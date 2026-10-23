@@ -2,6 +2,7 @@
 #include "dinosaur_console.h"
 #include "dinosaur_management.h"
 #include "dinosaur_search.h"
+#include "file_persistence.h"
 
 #include <iostream>
 #include <limits>
@@ -241,7 +242,7 @@ static void showDinosaurFromConsole(
 
 /*
  * Busca dinosaurios por nombre o fragmento del nombre.
- * Complejidad: O(n * m), aproximadamente, según la longitud del texto.
+ * Complejidad aproximada: O(n * m).
  */
 static void searchDinosaursByName(
     const DinosaurCollection& collection
@@ -335,6 +336,7 @@ void runDinosaurMenu(DinosaurCollection& collection) {
             << "6. Buscar dinosaurio por nombre\n"
             << "7. Contar letras o texto en nombres\n"
             << "8. Estimar grupos vocálicos de un nombre\n"
+            << "9. Guardar colección en archivo\n"
             << "0. Salir\n"
             << "Selecciona una opción: ";
 
@@ -390,6 +392,12 @@ void runDinosaurMenu(DinosaurCollection& collection) {
 
             case 8:
                 countNameVowelGroups();
+                break;
+
+            case 9:
+                if (saveDinosaursToFile(collection, "dinosaurs.txt")) {
+                    generateReport(collection, "report.txt");
+                }
                 break;
 
             case 0:
