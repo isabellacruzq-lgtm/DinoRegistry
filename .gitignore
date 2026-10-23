@@ -1,0 +1,11 @@
+# Ejecutables
+DinoRegistry
+*.out
+
+# Archivos de compilación
+*.o
+*.obj
+
+# Archivos del sistema y editor
+.DS_Store
+.vscode/
