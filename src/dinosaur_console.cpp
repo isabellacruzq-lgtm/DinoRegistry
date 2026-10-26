@@ -1,8 +1,8 @@
-
 #include "dinosaur_console.h"
 #include "dinosaur_management.h"
 #include "dinosaur_search.h"
 #include "file_persistence.h"
+#include "dinosaur_sorting.h"
 
 #include <iostream>
 #include <limits>
@@ -124,23 +124,131 @@ static void readDinosaur(
 /*
  * Muestra el perfil completo de un dinosaurio.
  */
+
+
 static void printDinosaurProfile(const Dinosaur& dinosaur) {
-    std::cout << "\n"
-              << "============================================\n"
-              << "          PERFIL DEL DINOSAURIO\n"
-              << "============================================\n"
-              << "Código:                  " << dinosaur.code << '\n'
-              << "Nombre:                  " << dinosaur.name << '\n'
-              << "Período:                 " << dinosaur.period << '\n'
-              << "Dieta:                   " << dinosaur.diet << '\n'
-              << "Longitud (metros):       " << dinosaur.lengthMeters << '\n'
-              << "Peso (toneladas):        " << dinosaur.weightTons << '\n'
-              << "Edad (millones de años): "
-              << dinosaur.ageMillionsYears << '\n'
+    std::cout << "\n========== Perfil del dinosaurio ==========\n"
+              << "Código: " << dinosaur.code << '\n'
+              << "Nombre: " << dinosaur.name << '\n'
+              << "Período: " << dinosaur.period << '\n'
+              << "Dieta: " << dinosaur.diet << '\n'
+              << "Longitud: " << dinosaur.lengthMeters << " metros\n"
+              << "Peso: " << dinosaur.weightTons << " toneladas\n"
+              << "Edad: " << dinosaur.ageMillionsYears
+              << " millones de años\n"
               << "Lugar de descubrimiento: "
               << dinosaur.discoverySite << '\n'
-              << "============================================\n";
+              << "===========================================\n";
 }
+
+/*
+ * Permite elegir un criterio y un algoritmo permitido.
+ * Ordena una copia, sin modificar la colección original.
+ */
+static void sortDinosaursFromConsole(
+    const DinosaurCollection& collection
+) {
+    if (collection.count == 0) {
+        std::cout << "La colección está vacía.\n";
+        return;
+    }
+
+    std::cout
+        << "\n--- Ordenamiento de dinosaurios ---\n"
+        << "1. Ordenar por nombre (Bubble Sort)\n"
+        << "2. Ordenar por nombre (Selection Sort)\n"
+        << "3. Ordenar por longitud (Insertion Sort)\n"
+        << "4. Ordenar por peso (Merge Sort)\n"
+        << "5. Ordenar por edad (Merge Sort)\n"
+        << "Selecciona una opción: ";
+
+    int option;
+
+    if (!(std::cin >> option)) {
+        std::cin.clear();
+        std::cin.ignore(
+            std::numeric_limits<std::streamsize>::max(), '\n'
+        );
+        std::cout << "Opción inválida.\n";
+        return;
+    }
+
+    std::cin.ignore(
+        std::numeric_limits<std::streamsize>::max(), '\n'
+    );
+
+    if (option < 1 || option > 5) {
+        std::cout << "Opción inválida.\n";
+        return;
+    }
+
+    Dinosaur* sorted = copyDinosaursForSorting(collection);
+    SortStats stats;
+
+    switch (option) {
+        case 1:
+            bubbleSortByName(sorted, collection.count, stats);
+            std::cout << "\nAlgoritmo: Bubble Sort\n"
+                      << "Tiempo: mejor O(n), peor O(n^2).\n"
+                      << "Espacio auxiliar: O(1), más la copia.\n";
+            break;
+
+        case 2:
+            selectionSortByName(sorted, collection.count, stats);
+            std::cout << "\nAlgoritmo: Selection Sort\n"
+                      << "Tiempo: O(n^2) en todos los casos.\n"
+                      << "Espacio auxiliar: O(1), más la copia.\n";
+            break;
+
+        case 3:
+            insertionSortByLength(sorted, collection.count, stats);
+            std::cout << "\nAlgoritmo: Insertion Sort\n"
+                      << "Tiempo: mejor O(n), peor O(n^2).\n"
+                      << "Espacio auxiliar: O(1), más la copia.\n";
+            break;
+
+        case 4:
+            mergeSortByWeight(sorted, collection.count, stats);
+            std::cout << "\nAlgoritmo: Merge Sort por peso\n"
+                      << "Tiempo: O(n log n) en todos los casos.\n"
+                      << "Espacio auxiliar: O(n), más la copia.\n";
+            break;
+
+        case 5:
+            mergeSortByAge(sorted, collection.count, stats);
+            std::cout << "\nAlgoritmo: Merge Sort por edad\n"
+                      << "Tiempo: O(n log n) en todos los casos.\n"
+                      << "Espacio auxiliar: O(n), más la copia.\n";
+            break;
+    }
+
+    std::cout << "\nResultados ordenados:\n";
+
+    for (std::size_t i = 0; i < collection.count; ++i) {
+        std::cout
+            << i + 1 << ". "
+            << sorted[i].name
+            << " | Código: " << sorted[i].code
+            << " | Longitud: " << sorted[i].lengthMeters
+            << " m | Peso: " << sorted[i].weightTons
+            << " t | Edad: " << sorted[i].ageMillionsYears
+            << " millones de años\n";
+    }
+
+    std::cout << "\nComparaciones: " << stats.comparisons << '\n';
+
+    if (option == 1 || option == 2) {
+        std::cout << "Intercambios: " << stats.swaps << '\n';
+    } else {
+        std::cout << "Movimientos: " << stats.movements << '\n';
+    }
+
+    delete[] sorted;
+
+    std::cout
+        << "\nLa colección original permanece sin cambios.\n";
+}
+
 
 /*
  * Muestra todos los dinosaurios registrados.
@@ -337,6 +445,7 @@ void runDinosaurMenu(DinosaurCollection& collection) {
             << "7. Contar letras o texto en nombres\n"
             << "8. Estimar grupos vocálicos de un nombre\n"
             << "9. Guardar colección en archivo\n"
+            << "10. Ordenar dinosaurios\n"
             << "0. Salir\n"
             << "Selecciona una opción: ";
 
@@ -398,6 +507,10 @@ void runDinosaurMenu(DinosaurCollection& collection) {
                 if (saveDinosaursToFile(collection, "dinosaurs.txt")) {
                     generateReport(collection, "report.txt");
                 }
+                break;
+
+            case 10:
+                sortDinosaursFromConsole(collection);
                 break;
 
             case 0:
