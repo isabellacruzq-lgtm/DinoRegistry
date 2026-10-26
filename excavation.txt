@@ -1,5 +1,9 @@
-MAPA DE EXCAVACION - SITIO A
-----------------------------
-Zona A: 12.5 N, 74.2 W - excavacion principal
-Zona B: 12.6 N, 74.3 W - restos fosiles pendientes
-Zona C: 12.7 N, 74.4 W - area de estudio
+8 8
+1 2 3 4 5 6 7 8
+2 3 4 5 6 7 8 9
+3 4 5 6 7 8 9 10
+4 5 6 7 8 9 10 11
+5 6 7 8 9 10 11 12
+6 7 8 9 10 11 12 13
+7 8 9 10 11 12 13 14
+8 9 10 11 12 13 14 15

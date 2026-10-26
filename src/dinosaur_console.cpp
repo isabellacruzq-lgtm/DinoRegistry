@@ -3,6 +3,7 @@
 #include "dinosaur_search.h"
 #include "file_persistence.h"
 #include "dinosaur_sorting.h"
+#include "excavation_map.h"
 
 #include <iostream>
 #include <limits>
@@ -446,6 +447,7 @@ void runDinosaurMenu(DinosaurCollection& collection) {
             << "8. Estimar grupos vocálicos de un nombre\n"
             << "9. Guardar colección en archivo\n"
             << "10. Ordenar dinosaurios\n"
+            << "11. Analizar mapa de excavación\n"
             << "0. Salir\n"
             << "Selecciona una opción: ";
 
@@ -511,6 +513,9 @@ void runDinosaurMenu(DinosaurCollection& collection) {
 
             case 10:
                 sortDinosaursFromConsole(collection);
+                break;
+            case 11:
+                runExcavationMapMenu("excavation.txt");
                 break;
 
             case 0:
