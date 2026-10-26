@@ -4,6 +4,7 @@
 #include "file_persistence.h"
 #include "dinosaur_sorting.h"
 #include "excavation_map.h"
+#include "recursive_challenges.h"
 
 #include <iostream>
 #include <limits>
@@ -448,6 +449,7 @@ void runDinosaurMenu(DinosaurCollection& collection) {
             << "9. Guardar colección en archivo\n"
             << "10. Ordenar dinosaurios\n"
             << "11. Analizar mapa de excavación\n"
+            << "12. Retos de visitantes\n"
             << "0. Salir\n"
             << "Selecciona una opción: ";
 
@@ -514,8 +516,13 @@ void runDinosaurMenu(DinosaurCollection& collection) {
             case 10:
                 sortDinosaursFromConsole(collection);
                 break;
+
             case 11:
                 runExcavationMapMenu("excavation.txt");
+                break;
+
+            case 12:
+                runRecursiveChallengesMenu(collection);
                 break;
 
             case 0:
