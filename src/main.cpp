@@ -1,4 +1,3 @@
-
 #include "dinosaur_collection.h"
 #include "dinosaur_console.h"
 #include "file_persistence.h"
