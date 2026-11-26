@@ -1,10 +1,12 @@
 #include "dinosaur_collection.h"
 #include "dinosaur_console.h"
 #include "file_persistence.h"
+#include <clocale>
 
 #include <iostream>
 
 int main() {
+    setlocale(LC_ALL, ".UTF8");
     DinosaurCollection collection;
     initializeCollection(collection);
 

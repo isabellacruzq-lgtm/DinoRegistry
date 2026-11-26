@@ -1,4 +1,3 @@
-
 #include "dinosaur_console.h"
 #include "dinosaur_management.h"
 #include "dinosaur_search.h"
@@ -6,15 +5,17 @@
 #include "dinosaur_sorting.h"
 #include "excavation_map.h"
 #include "recursive_challenges.h"
-
 #include <iostream>
 #include <limits>
 #include <string>
+#include <cctype>
+#include <cmath>
+#include <sstream>
 
 // Indica si el usuario cerró la entrada del programa.
 static bool inputEnded = false;
 
-/*
+/**
  * Lee una línea de texto y detecta el fin de entrada.
  * Parámetros: prompt, mensaje que se muestra al usuario.
  * Retorno: texto leído o cadena vacía si falla la lectura.
@@ -22,7 +23,6 @@ static bool inputEnded = false;
  */
 static std::string readText(const std::string& prompt) {
     std::string value;
-
     std::cout << prompt;
 
     if (!std::getline(std::cin, value)) {
@@ -33,62 +33,141 @@ static std::string readText(const std::string& prompt) {
     return value;
 }
 
-/*
- * Lee un número no negativo y detecta el fin de entrada.
- * Parámetros: prompt, mensaje que se muestra al usuario.
- * Retorno: número leído; cero si termina la entrada.
- * Complejidad: depende del número de intentos.
+
+
+/**
+ * Comprueba que un texto no esté vacío ni contenga solamente espacios.
+ * Parámetros: value, texto que se comprobará.
+ * Retorno: true si contiene algún carácter distinto de un espacio.
+ * Complejidad: O(n), donde n es la longitud del texto.
  */
-static double readNumber(const std::string& prompt) {
-    double value;
+static bool hasContent(const std::string& value) {
+    return value.find_first_not_of(" \t\r\n") != std::string::npos;
+}
 
+/**
+ * Solicita un texto obligatorio y repite la pregunta si está vacío.
+ * Parámetros: prompt, mensaje que se mostrará.
+ * Retorno: texto ingresado o cadena vacía si termina la entrada.
+ * Complejidad: depende de los intentos y la longitud del texto.
+ */
+static std::string readRequiredText(const std::string& prompt) {
     while (true) {
-        std::cout << prompt;
-
-        if (std::cin >> value) {
-            std::cin.ignore(
-                std::numeric_limits<std::streamsize>::max(), '\n'
-            );
-
-            if (value >= 0.0) {
-                return value;
-            }
-
-            std::cout
-                << "Entrada inválida. Usa un número mayor o igual a cero.\n";
-        } else {
-            if (std::cin.eof()) {
-                inputEnded = true;
-                return 0.0;
-            }
-
-            std::cin.clear();
-            std::cin.ignore(
-                std::numeric_limits<std::streamsize>::max(), '\n'
-            );
-
-            std::cout
-                << "Entrada inválida. Usa un número mayor o igual a cero.\n";
-        }
+        std::string value = readText(prompt);
+        if (inputEnded) return "";
+        if (hasContent(value)) return value;
+        std::cout << "El campo no puede estar vacío.\n";
     }
 }
 
-/*
- * Lee los datos de un dinosaurio.
- * Parámetros:
- *   dinosaur: estructura donde se guardan los datos.
- *   askCode: indica si se solicita un código.
- *   collection: colección usada para sugerir un código.
- * Retorno: true si se leyeron todos los datos; false si terminó la entrada.
- * Complejidad: depende de la longitud de los datos introducidos.
+/**
+ * Solicita un valor de una lista de opciones sin distinguir mayúsculas.
+ * Parámetros: prompt, mensaje; validOptions, opciones permitidas;
+ * optionCount, cantidad de opciones.
+ * Retorno: opción válida o cadena vacía si termina la entrada.
+ * Complejidad: depende de los intentos y de la cantidad de opciones.
  */
+static std::string readChoiceText(
+    const std::string& prompt,
+    const std::string validOptions[],
+    int optionCount
+) {
+    while (true) {
+        std::string value = readRequiredText(prompt);
+        if (inputEnded) return "";
+
+        std::string normalized = value;
+        for (std::size_t i = 0; i < normalized.length(); i++) {
+            normalized[i] = static_cast<char>(
+                std::tolower(static_cast<unsigned char>(normalized[i]))
+            );
+        }
+
+        for (int i = 0; i < optionCount; i++) {
+            std::string option = validOptions[i];
+            for (std::size_t j = 0; j < option.length(); j++) {
+                option[j] = static_cast<char>(
+                    std::tolower(static_cast<unsigned char>(option[j]))
+                );
+            }
+            if (normalized == option) return value;
+        }
+
+        std::cout << "Opción inválida. Intenta nuevamente.\n";
+    }
+}
+
+/**
+ * Lee un número finito no negativo y rechaza caracteres adicionales.
+ * Parámetros: prompt, mensaje que se mostrará.
+ * Retorno: número válido o cero si termina la entrada.
+ * Complejidad: depende del número de intentos.
+ */
+static double readNumber(const std::string& prompt) {
+    while (true) {
+        std::string line = readText(prompt);
+        if (inputEnded) return 0.0;
+
+        std::istringstream input(line);
+        double value;
+
+        if (input >> value) {
+            input >> std::ws;
+            if (input.eof() && std::isfinite(value) && value >= 0.0) {
+                return value;
+            }
+        }
+
+        std::cout
+            << "Entrada inválida. Escribe un número finito mayor o igual a cero.\n";
+    }
+}
+
+/**
+ * Lee una opción entera completa, sin aceptar texto adicional.
+ * Parámetros: prompt, mensaje; value, variable donde se guarda la opción.
+ * Retorno: true si se leyó un entero válido; false si terminó la entrada.
+ * Complejidad: O(m), donde m es la longitud de la línea.
+ */
+static bool readIntegerOption(const std::string& prompt, int& value) {
+    while (true) {
+        std::string line = readText(prompt);
+        if (inputEnded) return false;
+
+        std::istringstream input(line);
+        char extra;
+        if ((input >> value) && !(input >> extra)) return true;
+
+        std::cout << "Entrada inválida. Debes escribir un número entero.\n";
+    }
+}
+
+
+
+/**
+
+ * Lee los datos de un dinosaurio.
+
+ * Parámetros:*
+
+ *   dinosaur: estructura donde se guardan los datos.
+
+ *   askCode: indica si se solicita un código.
+
+ *   collection: colección usada para sugerir un código.
+
+ * Retorno: true si se leyeron todos los datos; false si terminó la entrada.
+
+ * Complejidad: depende de la longitud de los datos introducidos.
+
+ */
+
 static bool readDinosaur(
     Dinosaur& dinosaur,
     bool askCode,
     const DinosaurCollection* collection = nullptr
 ) {
-    dinosaur.name = readText("Nombre: ");
-
+    dinosaur.name = readRequiredText("Nombre: ");
     if (inputEnded) {
         return false;
     }
@@ -100,9 +179,7 @@ static bool readDinosaur(
                 : "";
 
         std::cout << "Código sugerido: "
-                  << (suggestedCode.empty()
-                          ? "No disponible"
-                          : suggestedCode)
+                  << (suggestedCode.empty() ? "No disponible" : suggestedCode)
                   << '\n';
 
         while (true) {
@@ -138,16 +215,26 @@ static bool readDinosaur(
         }
     }
 
-    dinosaur.period = readText(
-        "Período (Triassic/Jurassic/Cretaceous): "
+    const std::string validPeriods[] = {
+        "Triassic", "Jurassic", "Cretaceous"
+    };
+    dinosaur.period = readChoiceText(
+        "Período (Triassic/Jurassic/Cretaceous): ",
+        validPeriods,
+        3
     );
 
     if (inputEnded) {
         return false;
     }
 
-    dinosaur.diet = readText(
-        "Dieta (Carnivore/Herbivore/Omnivore): "
+    const std::string validDiets[] = {
+        "Carnivore", "Herbivore", "Omnivore"
+    };
+    dinosaur.diet = readChoiceText(
+        "Dieta (Carnivore/Herbivore/Omnivore): ",
+        validDiets,
+        3
     );
 
     if (inputEnded) {
@@ -155,29 +242,21 @@ static bool readDinosaur(
     }
 
     dinosaur.lengthMeters = readNumber("Longitud en metros: ");
-
     if (inputEnded) {
         return false;
     }
 
     dinosaur.weightTons = readNumber("Peso en toneladas: ");
-
     if (inputEnded) {
         return false;
     }
 
-    dinosaur.ageMillionsYears = readNumber(
-        "Edad en millones de años: "
-    );
-
+    dinosaur.ageMillionsYears = readNumber("Edad en millones de años: ");
     if (inputEnded) {
         return false;
     }
 
-    dinosaur.discoverySite = readText(
-        "Lugar de descubrimiento: "
-    );
-
+    dinosaur.discoverySite = readRequiredText("Lugar de descubrimiento: ");
     if (inputEnded) {
         return false;
     }
@@ -185,34 +264,64 @@ static bool readDinosaur(
     return true;
 }
 
-/*
+
+
+/**
+
  * Muestra el perfil completo de un dinosaurio.
+
  * Parámetros: dinosaur, dinosaurio que se mostrará.
+
  * Retorno: ninguno.
+
  * Complejidad: O(1), sin contar la salida de los textos.
+
  */
+
 static void printDinosaurProfile(const Dinosaur& dinosaur) {
+
     std::cout << "\n========== Perfil del dinosaurio ==========\n"
+
               << "Código: " << dinosaur.code << '\n'
+
               << "Nombre: " << dinosaur.name << '\n'
+
               << "Período: " << dinosaur.period << '\n'
+
               << "Dieta: " << dinosaur.diet << '\n'
+
               << "Longitud: " << dinosaur.lengthMeters << " metros\n"
+
               << "Peso: " << dinosaur.weightTons << " toneladas\n"
+
               << "Edad: " << dinosaur.ageMillionsYears
+
               << " millones de años\n"
+
               << "Lugar de descubrimiento: "
+
               << dinosaur.discoverySite << '\n'
+
               << "===========================================\n";
+
 }
 
-/*
+
+
+/**
+
  * Permite elegir un algoritmo de ordenamiento.
+
  * Ordena una copia para conservar la colección original.
+
  * Parámetros: collection, colección de dinosaurios.
+
  * Retorno: ninguno.
+
  * Complejidad: depende del algoritmo seleccionado.
+
  */
+
 static void sortDinosaursFromConsole(
     const DinosaurCollection& collection
 ) {
@@ -227,29 +336,12 @@ static void sortDinosaursFromConsole(
         << "2. Ordenar por nombre (Selection Sort)\n"
         << "3. Ordenar por longitud (Insertion Sort)\n"
         << "4. Ordenar por peso (Merge Sort)\n"
-        << "5. Ordenar por edad (Merge Sort)\n"
-        << "Selecciona una opción: ";
+        << "5. Ordenar por edad (Merge Sort)\n";
 
     int option;
-
-    if (!(std::cin >> option)) {
-        if (std::cin.eof()) {
-            inputEnded = true;
-            return;
-        }
-
-        std::cin.clear();
-        std::cin.ignore(
-            std::numeric_limits<std::streamsize>::max(), '\n'
-        );
-
-        std::cout << "Opción inválida.\n";
+    if (!readIntegerOption("Selecciona una opción: ", option)) {
         return;
     }
-
-    std::cin.ignore(
-        std::numeric_limits<std::streamsize>::max(), '\n'
-    );
 
     if (option < 1 || option > 5) {
         std::cout << "Opción inválida.\n";
@@ -323,12 +415,20 @@ static void sortDinosaursFromConsole(
         << "\nLa colección original permanece sin cambios.\n";
 }
 
-/*
+
+
+/**
+
  * Muestra todos los dinosaurios registrados.
+
  * Parámetros: collection, colección que se mostrará.
+
  * Retorno: ninguno.
+
  * Complejidad: O(n).
+
  */
+
 static void listDinosaurs(const DinosaurCollection& collection) {
     if (collection.count == 0) {
         std::cout << "La colección está vacía.\n";
@@ -343,12 +443,20 @@ static void listDinosaurs(const DinosaurCollection& collection) {
     }
 }
 
-/*
+
+
+/**
+
  * Solicita los datos y agrega un dinosaurio.
+
  * Parámetros: collection, colección que se modificará.
+
  * Retorno: ninguno.
+
  * Complejidad: depende de la búsqueda y del crecimiento de la colección.
+
  */
+
 static void addDinosaurFromConsole(DinosaurCollection& collection) {
     Dinosaur dinosaur;
 
@@ -365,12 +473,18 @@ static void addDinosaurFromConsole(DinosaurCollection& collection) {
     }
 }
 
-/*
+/**
+
  * Edita un dinosaurio conservando su código original.
+
  * Parámetros: collection, colección que se modificará.
+
  * Retorno: ninguno.
+
  * Complejidad: depende de la búsqueda y de la actualización.
+
  */
+
 static void editDinosaurFromConsole(DinosaurCollection& collection) {
     const std::string code = readText(
         "Código del dinosaurio que deseas editar: "
@@ -401,13 +515,13 @@ static void editDinosaurFromConsole(DinosaurCollection& collection) {
         std::cout << "No fue posible actualizar el dinosaurio.\n";
     }
 }
-
-/*
+/**
  * Elimina un dinosaurio por código.
  * Parámetros: collection, colección que se modificará.
  * Retorno: ninguno.
  * Complejidad: depende de la búsqueda en la colección.
  */
+
 static void deleteDinosaurFromConsole(
     DinosaurCollection& collection
 ) {
@@ -424,14 +538,16 @@ static void deleteDinosaurFromConsole(
     } else {
         std::cout << "No se encontró ese código.\n";
     }
+
 }
 
-/*
+/**
  * Muestra el perfil de un dinosaurio buscado por código.
  * Parámetros: collection, colección donde se buscará.
  * Retorno: ninguno.
  * Complejidad: depende de la búsqueda.
  */
+
 static void showDinosaurFromConsole(
     const DinosaurCollection& collection
 ) {
@@ -444,7 +560,6 @@ static void showDinosaurFromConsole(
     }
 
     Dinosaur dinosaur;
-
     if (getDinosaurByCode(collection, code, dinosaur)) {
         printDinosaurProfile(dinosaur);
     } else {
@@ -452,12 +567,13 @@ static void showDinosaurFromConsole(
     }
 }
 
-/*
+/**
  * Busca dinosaurios por nombre o fragmento del nombre.
  * Parámetros: collection, colección donde se buscará.
  * Retorno: ninguno.
  * Complejidad aproximada: O(n * m), según la búsqueda implementada.
  */
+
 static void searchDinosaursByName(
     const DinosaurCollection& collection
 ) {
@@ -495,21 +611,20 @@ static void searchDinosaursByName(
             matches < collection.count ? matches : collection.count;
 
         for (std::size_t i = 0; i < displayed; ++i) {
-            printDinosaurProfile(
-                collection.items[results[i]]
-            );
+            printDinosaurProfile(collection.items[results[i]]);
         }
     }
 
     delete[] results;
 }
 
-/*
+/**
  * Cuenta apariciones de una letra o texto en todos los nombres.
  * Parámetros: collection, colección cuyos nombres se analizarán.
  * Retorno: ninguno.
  * Complejidad: depende de la cantidad de nombres y sus longitudes.
  */
+
 static void countTextInNames(
     const DinosaurCollection& collection
 ) {
@@ -529,14 +644,16 @@ static void countTextInNames(
     std::cout << "Apariciones encontradas: "
               << countOccurrencesInNames(collection, text)
               << '\n';
+
 }
 
-/*
+/**
  * Estima grupos vocálicos en un nombre.
  * Parámetros: ninguno; el nombre se solicita por consola.
  * Retorno: ninguno.
  * Complejidad: depende de la longitud del nombre.
  */
+
 static void countNameVowelGroups() {
     const std::string name = readText(
         "Nombre que deseas analizar: "
@@ -545,21 +662,23 @@ static void countNameVowelGroups() {
     if (inputEnded) {
         return;
     }
-
     std::cout << "Grupos vocálicos aproximados: "
               << countSyllableGroups(name) << '\n';
+
 }
 
-/*
+/**
  * Ejecuta el menú principal de DinoRegistry.
- * Parámetros: collection, colección que administrará el menú.
+ * Paráetros: collection, colección que administrará el menú.
  * Retorno: ninguno.
  * Complejidad: depende de las opciones elegidas.
  */
+
 void runDinosaurMenu(DinosaurCollection& collection) {
     bool running = true;
 
     while (running) {
+
         std::cout
             << "\n========== DinoRegistry ==========\n"
             << "1. Agregar dinosaurio\n"
@@ -574,29 +693,12 @@ void runDinosaurMenu(DinosaurCollection& collection) {
             << "10. Ordenar dinosaurios\n"
             << "11. Analizar mapa de excavación\n"
             << "12. Retos de visitantes\n"
-            << "0. Salir\n"
-            << "Selecciona una opción: ";
+            << "0. Salir\n";
 
         int option;
-
-        if (!(std::cin >> option)) {
-            if (std::cin.eof()) {
-                break;
-            }
-
-            std::cin.clear();
-            std::cin.ignore(
-                std::numeric_limits<std::streamsize>::max(), '\n'
-            );
-
-            std::cout
-                << "Entrada inválida. Debes escribir un número.\n";
-            continue;
+        if (!readIntegerOption("Selecciona una opción: ", option)) {
+            break;
         }
-
-        std::cin.ignore(
-            std::numeric_limits<std::streamsize>::max(), '\n'
-        );
 
         switch (option) {
             case 1:
@@ -663,5 +765,7 @@ void runDinosaurMenu(DinosaurCollection& collection) {
         if (inputEnded) {
             running = false;
         }
+
     }
+
 }

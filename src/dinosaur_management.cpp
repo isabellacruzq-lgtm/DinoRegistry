@@ -1,18 +1,19 @@
 #include "dinosaur_management.h"
 #include <cctype>
+#include <cmath>
 #include <new>
+#include <string>
 
 /*
- * Convierte un texto a minúsculas para comparar códigos sin distinguir
- * entre mayúsculas y minúsculas.
+ * Convierte un texto a minúsculas para comparar códigos.
  * Parámetros: text, texto que se convertirá.
- * Retorno: una copia en minúsculas.
- * Complejidad: O(m), donde m es la longitud del texto.
+ * Retorno: copia del texto en minúsculas.
+ * Complejidad: O(n), donde n es la longitud del texto.
  */
 static std::string toLowerCase(const std::string& text) {
     std::string result = text;
 
-    for (std::size_t i = 0; i < result.size(); ++i) {
+    for (std::size_t i = 0; i < result.length(); i++) {
         result[i] = static_cast<char>(
             std::tolower(static_cast<unsigned char>(result[i]))
         );
@@ -22,21 +23,106 @@ static std::string toLowerCase(const std::string& text) {
 }
 
 /*
- * Busca un dinosaurio por su código.
- * Parámetros: collection, colección consultada; code, código buscado.
- * Retorno: índice encontrado o -1 si no existe.
- * Complejidad: O(n * m), donde n es el número de registros y m
- * la longitud del código.
+ * Comprueba que un texto no esté vacío ni contenga solo espacios.
+ * Parámetros: text, texto que se comprobará.
+ * Retorno: true si contiene algún carácter distinto de un espacio.
+ * Complejidad: O(n), donde n es la longitud del texto.
+ */
+static bool hasContent(const std::string& text) {
+    return text.find_first_not_of(" \t\r\n") != std::string::npos;
+}
+
+/*
+ * Comprueba el formato de un código: letras mayúsculas, guion y tres dígitos.
+ * Parámetros: code, código que se comprobará.
+ * Retorno: true si cumple el formato esperado.
+ * Complejidad: O(n), donde n es la longitud del código.
+ */
+static bool hasValidCodeFormat(const std::string& code) {
+    if (code.length() < 5 || code.length() > 7) {
+        return false;
+    }
+
+    const std::size_t hyphenPosition = code.length() - 4;
+
+    for (std::size_t i = 0; i < hyphenPosition; i++) {
+        if (code[i] < 'A' || code[i] > 'Z') {
+            return false;
+        }
+    }
+
+    if (code[hyphenPosition] != '-') {
+        return false;
+    }
+
+    for (std::size_t i = hyphenPosition + 1; i < code.length(); i++) {
+        if (code[i] < '0' || code[i] > '9') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*
+ * Comprueba que un dinosaurio tenga todos sus datos válidos.
+ * Parámetros: dinosaur, dinosaurio que se comprobará.
+ * Retorno: true si todos los campos son válidos.
+ * Complejidad: O(n), por las comprobaciones de texto.
+ */
+static bool isValidDinosaur(const Dinosaur& dinosaur) {
+    if (!hasContent(dinosaur.code) ||
+        !hasValidCodeFormat(dinosaur.code) ||
+        !hasContent(dinosaur.name) ||
+        !hasContent(dinosaur.period) ||
+        !hasContent(dinosaur.diet) ||
+        !hasContent(dinosaur.discoverySite)) {
+        return false;
+    }
+
+    if (!std::isfinite(dinosaur.lengthMeters) ||
+        !std::isfinite(dinosaur.weightTons) ||
+        !std::isfinite(dinosaur.ageMillionsYears) ||
+        dinosaur.lengthMeters < 0.0 ||
+        dinosaur.weightTons < 0.0 ||
+        dinosaur.ageMillionsYears < 0.0) {
+        return false;
+    }
+
+    const std::string period = toLowerCase(dinosaur.period);
+    const std::string diet = toLowerCase(dinosaur.diet);
+
+    if (period != "triassic" &&
+        period != "jurassic" &&
+        period != "cretaceous") {
+        return false;
+    }
+
+    if (diet != "carnivore" &&
+        diet != "herbivore" &&
+        diet != "omnivore") {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * Busca un dinosaurio por su código sin distinguir mayúsculas.
+ * Parámetros: collection, colección donde se buscará;
+ * code, código que se desea encontrar.
+ * Retorno: posición del dinosaurio o -1 si no existe.
+ * Complejidad: O(n), donde n es la cantidad de dinosaurios.
  */
 int findDinosaurByCode(
     const DinosaurCollection& collection,
     const std::string& code
 ) {
-    const std::string target = toLowerCase(code);
+    const std::string searchedCode = toLowerCase(code);
 
-    for (std::size_t i = 0; i < collection.count; ++i) {
-        if (toLowerCase(collection.items[i].code) == target) {
-            return static_cast<int>(i);
+    for (int i = 0; i < collection.count; i++) {
+        if (toLowerCase(collection.items[i].code) == searchedCode) {
+            return i;
         }
     }
 
@@ -44,27 +130,23 @@ int findDinosaurByCode(
 }
 
 /*
- * Amplía la capacidad de la colección, copia los registros y libera
- * el arreglo anterior.
+ * Aumenta la capacidad de la colección cuando está llena.
  * Parámetros: collection, colección que necesita más espacio.
- * Retorno: true si la ampliación tuvo éxito; false si falló la reserva.
- * Complejidad: O(n), por la copia de los registros existentes.
+ * Retorno: true si pudo aumentar la capacidad.
+ * Complejidad: O(n), donde n es la cantidad de elementos.
  */
 static bool growCollection(DinosaurCollection& collection) {
-    const std::size_t newCapacity =
-        (collection.capacity == 0)
-            ? 2
-            : collection.capacity * 2;
+    int newCapacity = (collection.capacity == 0)
+        ? 2
+        : collection.capacity * 2;
 
-    // nothrow permite comprobar el fallo de reserva sin lanzar una excepción.
     Dinosaur* newItems = new (std::nothrow) Dinosaur[newCapacity];
 
-    if (newItems == nullptr) {
+    if (newItems == NULL) {
         return false;
     }
 
-    // Copiar antes de liberar garantiza que los datos no se pierdan.
-    for (std::size_t i = 0; i < collection.count; ++i) {
+    for (int i = 0; i < collection.count; i++) {
         newItems[i] = collection.items[i];
     }
 
@@ -77,17 +159,17 @@ static bool growCollection(DinosaurCollection& collection) {
 }
 
 /*
- * Agrega un dinosaurio si su código no está repetido.
- * Parámetros: collection, colección que se modifica; dinosaur, registro nuevo.
- * Retorno: true si se agregó; false si el código está vacío, repetido
- * o no se pudo reservar memoria.
- * Complejidad: O(n) por la búsqueda y la posible ampliación.
+ * Agrega un dinosaurio si sus datos son válidos y su código no existe.
+ * Parámetros: collection, colección donde se agregará;
+ * dinosaur, datos del nuevo dinosaurio.
+ * Retorno: true si se agregó correctamente.
+ * Complejidad: O(n), por la búsqueda del código y posible copia.
  */
 bool addDinosaur(
     DinosaurCollection& collection,
     const Dinosaur& dinosaur
 ) {
-    if (dinosaur.code.empty()) {
+    if (!isValidDinosaur(dinosaur)) {
         return false;
     }
 
@@ -95,91 +177,95 @@ bool addDinosaur(
         return false;
     }
 
-    if (collection.count == collection.capacity) {
+    if (collection.count >= collection.capacity) {
         if (!growCollection(collection)) {
             return false;
         }
     }
 
     collection.items[collection.count] = dinosaur;
-    ++collection.count;
+    collection.count++;
 
     return true;
 }
 
 /*
- * Edita los datos de un dinosaurio existente y conserva su código original.
- * Parámetros: collection, colección que se modifica; code, código original;
- * updatedDinosaur, datos nuevos.
- * Retorno: true si se editó; false si no existe el código.
- * Complejidad: O(n).
+ * Edita los datos de un dinosaurio existente y conserva su código.
+ * Parámetros: collection, colección donde está el dinosaurio;
+ * code, código del dinosaurio que se editará;
+ * replacement, nuevos datos.
+ * Retorno: true si se editó correctamente.
+ * Complejidad: O(n), por la búsqueda del dinosaurio.
  */
 bool editDinosaur(
     DinosaurCollection& collection,
     const std::string& code,
-    const Dinosaur& updatedDinosaur
+    const Dinosaur& replacement
 ) {
-    const int index = findDinosaurByCode(collection, code);
+    int position = findDinosaurByCode(collection, code);
 
-    if (index == -1) {
+    if (position == -1) {
         return false;
     }
 
-    Dinosaur replacement = updatedDinosaur;
-    replacement.code = collection.items[index].code;
+    Dinosaur updatedDinosaur = replacement;
+    updatedDinosaur.code = collection.items[position].code;
 
-    collection.items[index] = replacement;
+    if (!isValidDinosaur(updatedDinosaur)) {
+        return false;
+    }
+
+    collection.items[position] = updatedDinosaur;
 
     return true;
 }
 
 /*
- * Elimina un dinosaurio y desplaza los registros posteriores.
- * Parámetros: collection, colección que se modifica; code, código buscado.
- * Retorno: true si se eliminó; false si no existe.
- * Complejidad: O(n).
+ * Elimina un dinosaurio y desplaza los elementos posteriores.
+ * Parámetros: collection, colección donde se encuentra;
+ * code, código del dinosaurio que se eliminará.
+ * Retorno: true si se eliminó correctamente.
+ * Complejidad: O(n), por la búsqueda y el desplazamiento.
  */
 bool deleteDinosaur(
     DinosaurCollection& collection,
     const std::string& code
 ) {
-    const int foundIndex = findDinosaurByCode(collection, code);
+    int position = findDinosaurByCode(collection, code);
 
-    if (foundIndex == -1) {
+    if (position == -1) {
         return false;
     }
 
-    const std::size_t index =
-        static_cast<std::size_t>(foundIndex);
-
-    for (std::size_t i = index; i + 1 < collection.count; ++i) {
+    for (int i = position; i < collection.count - 1; i++) {
         collection.items[i] = collection.items[i + 1];
     }
 
-    --collection.count;
+    collection.count--;
 
     return true;
 }
 
 /*
- * Copia un dinosaurio encontrado a la variable result.
- * Parámetros: collection, colección consultada; code, código buscado;
- * result, variable que recibirá el registro.
- * Retorno: true si se encontró; false en caso contrario.
- * Complejidad: O(n).
+ * Obtiene una copia de un dinosaurio mediante su código.
+ * Parámetros: collection, colección donde se buscará;
+ * code, código que se desea consultar;
+ * result, variable donde se guardará el dinosaurio encontrado.
+ * Retorno: true si se encontró el dinosaurio.
+ * Complejidad: O(n), por la búsqueda.
  */
 bool getDinosaurByCode(
     const DinosaurCollection& collection,
     const std::string& code,
     Dinosaur& result
 ) {
-    const int index = findDinosaurByCode(collection, code);
+    int position = findDinosaurByCode(collection, code);
 
-    if (index == -1) {
+    if (position == -1) {
         return false;
     }
 
-    result = collection.items[index];
+    result = collection.items[position];
 
     return true;
 }
