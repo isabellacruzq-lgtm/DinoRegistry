@@ -1,0 +1,32 @@
+Dinosaurios cargados: 3.
+
+========== MAPA DE EXCAVACION ==========
+8 8
+1 2 3 4 5 6 7 8
+2 3 4 5 6 7 8 9
+3 4 5 6 7 8 9 10
+4 5 6 7 8 9 10 11
+5 6 7 8 9 10 11 12
+6 7 8 9 10 11 12 13
+7 8 9 10 11 12 13 14
+8 9 10 11 12 13 14 15
+========================================
+
+
+========== DinoRegistry ==========
+1. Agregar dinosaurio
+2. Editar dinosaurio
+3. Eliminar dinosaurio
+4. Listar dinosaurios
+5. Mostrar perfil por código
+6. Buscar dinosaurio por nombre
+7. Contar letras o texto en nombres
+8. Estimar grupos vocálicos de un nombre
+9. Guardar colección en archivo
+10. Ordenar dinosaurios
+11. Analizar mapa de excavación
+12. Retos de visitantes
+0. Salir
+Selecciona una opción: Coleccion guardada en dinosaurs.txt.
+Reporte generado en report.txt.
+Memoria liberada. Hasta luego.

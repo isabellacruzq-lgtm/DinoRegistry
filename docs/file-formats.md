@@ -1,57 +1,85 @@
 # Formatos de archivos de DinoRegistry
 
-## 1. dinosaurs.txt
+## 1. `dinosaurs.txt` (entrada y persistencia)
 
-Archivo de texto plano. Cada línea representa un dinosaurio
-con ocho campos separados por el carácter `|`.
+Archivo de texto plano. Cada línea no vacía representa un dinosaurio con ocho
+campos separados por `|`, en este orden:
 
-Orden de los campos:
-
-1. Código único.
+1. Código.
 2. Nombre.
 3. Período geológico.
 4. Dieta.
-5. Longitud en metros.
-6. Peso en toneladas.
-7. Antigüedad en millones de años.
+5. Longitud en metros (`double`).
+6. Peso en toneladas (`double`).
+7. Antigüedad en millones de años (`double`).
 8. Lugar de descubrimiento.
 
-Ejemplo válido:
+Ejemplo:
 
-DIN-001|Tyrannosaurus Rex|Cretacico|Carnivoro|12.0|8.0|68.0|Montana, USA
-DIN-002|Triceratops|Cretacico|Herbivoro|9.0|6.0|66.0|Dakota del Sur, USA
+```text
+DIN-001|Tyrannosaurus Rex|Cretacico|Carnivoro|12|8|68|Montana, USA
+DIN-002|Triceratops|Cretacico|Herbivoro|9|6|66|Dakota del Sur, USA
+```
 
-Los valores numéricos deben poder convertirse a números.
-No se debe usar `|` dentro de un campo. Los códigos deben ser
-únicos. Las líneas vacías se ignoran; las líneas inválidas
-se omiten y generan un aviso.
+No se debe incluir `|` dentro de un campo. Los campos numéricos deben poder
+convertirse con `std::stod`. El cargador exige código y nombre no vacíos y la
+función de gestión impide códigos duplicados (comparación sin distinguir
+mayúsculas/minúsculas). Las líneas vacías se ignoran; las inválidas o duplicadas
+se omiten y generan avisos. El archivo se reescribe al guardar la colección.
 
-## 2. excavation.txt
+## 2. `excavation.txt` (matriz de excavación)
 
-Archivo de texto plano que contiene el mapa de excavación.
-Cada línea se muestra tal como aparece en el archivo. Puede
-incluir zonas, coordenadas, encabezados y observaciones.
+En esta versión, el archivo que consume `loadExcavationMap` NO es texto libre:
+contiene primero dos enteros positivos (filas y columnas), seguidos por
+exactamente `filas * columnas` enteros no negativos. Se permiten espacios y
+saltos de línea entre números. No se permite contenido adicional después de
+la última celda.
 
-Ejemplo válido:
+Ejemplo de 3 filas por 3 columnas:
 
-MAPA DE EXCAVACION - SITIO A
-----------------------------
-Zona A: 12.5 N, 74.2 W - excavacion principal
-Zona B: 12.6 N, 74.3 W - restos pendientes
+```text
+3 3
+1 2 3
+4 5 6
+7 8 9
+```
 
-## 3. report.txt
+El archivo de ejemplo incluido contiene una matriz de 8 x 8. La función
+`readExcavationMap` solo imprime el contenido textual del archivo; el análisis
+matemático usa `loadExcavationMap`, que interpreta la matriz numérica. Por eso,
+la descripción anterior del archivo como texto libre fue corregida para
+coincidir con el formato que realmente valida el módulo de mapas.
 
-Archivo de salida generado por DinoRegistry. Contiene el
-número total de dinosaurios y, para cada registro, el código,
-nombre, período, dieta, longitud, peso, antigüedad y lugar
-de descubrimiento.
+## 3. `report.txt` (salida generada)
 
-No es necesario editarlo manualmente. Se regenera al guardar
-desde el menú o al salir del programa.
+Archivo de texto generado por `generateReport` al guardar/salir. No es un
+archivo de entrada ni debe editarse manualmente. Contiene un título, el total
+de registros y una ficha por dinosaurio. Los campos numéricos se escriben con
+dos decimales.
 
-## Ubicación de los archivos
+Ejemplo de estructura:
 
-Los nombres `dinosaurs.txt`, `excavation.txt` y `report.txt`
-son rutas relativas al directorio desde el que se ejecuta
-DinoRegistry. Ejecuta el programa desde la raíz del proyecto
-para mantenerlos en el mismo lugar.
+```text
+REPORTE DE DINOSAURIOS
+======================
+
+Total de dinosaurios: 1
+
+Codigo: DIN-001
+Nombre: Tyrannosaurus Rex
+Periodo: Cretacico
+Dieta: Carnivoro
+Longitud: 12.00 metros
+Peso: 8.00 toneladas
+Antiguedad: 68.00 millones de anos
+Lugar de descubrimiento: Montana, USA
+```
+
+Cuando la colección está vacía, el reporte indica `Total de dinosaurios: 0` y
+`La coleccion esta vacia.`
+
+## Ubicación
+
+Los nombres de archivo se resuelven respecto al directorio de trabajo actual.
+Ejecutar DinoRegistry desde la raíz del repositorio para que encuentre los
+archivos de ejemplo y cree `report.txt` allí.

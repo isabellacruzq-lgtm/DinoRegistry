@@ -1,0 +1,22 @@
+Algoritmo                  N     Comparaciones     Tiempo(ms)  Validacion   Interc./mov.
+----------------------------------------------------------------------------------------
+Bubble Sort              100              4895          0.403          OK           2503
+Selection Sort           100              4950          0.052          OK             95
+Insertion Sort           100              2452          0.076          OK           2551
+Merge Sort (peso)        100               497          0.049          OK           1344
+Merge Sort (edad)        100               538          0.044          OK           1344
+Bubble Sort             1000            498939         25.675          OK         251205
+Selection Sort          1000            499500          4.889          OK            991
+Insertion Sort          1000            251245          7.714          OK         252244
+Merge Sort (peso)       1000              8203          0.698          OK          19952
+Merge Sort (edad)       1000              8621          0.722          OK          19952
+Bubble Sort             5000          12490119        549.776          OK        6245575
+Selection Sort          5000          12497500        120.550          OK           4989
+Insertion Sort          5000           6246229        156.862          OK        6251228
+Merge Sort (peso)       5000             53239          3.411          OK         123616
+Merge Sort (edad)       5000             55263          3.432          OK         123616
+Bubble Sort            10000          49985130       2206.087          OK       25016941
+Selection Sort         10000          49995000        478.580          OK           9987
+Insertion Sort         10000          24967459        625.978          OK       24977458
+Merge Sort (peso)      10000            116473          8.157          OK         267232
+Merge Sort (edad)      10000            120501          7.461          OK         267232
